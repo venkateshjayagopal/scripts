@@ -14,8 +14,11 @@ fi
 if [ ! -d logs/$_DATE_/ctr ]; then
   mkdir -p logs/$_DATE_/ctr
 fi
-pass=admin
+if [ ! -d logs/$_DATE_/enf ]; then
+  mkdir -p logs/$_DATE_/enf
+fi
 
+pass=admin
 port=10443
 _controllerIP_=`kubectl get pod -nneuvector -l app=neuvector-controller-pod -o jsonpath='{.items[0].status.podIP}'`
 _PING_STATUS=`ping $_controllerIP_ -c 1 -w 2 | grep loss | awk '{print $6}' | awk -F% '{print $1}'`
@@ -183,3 +186,7 @@ kubectl exec -ti -nneuvector $leader_pod -- consul snapshot inspect -kvdetails -
 kubectl exec -ti -nneuvector $leader_pod -- ls -l
 
 kubectl cp -n neuvector $leader_pod:backup.snap logs/$_DATE_/ctr/backup.snap
+
+echo "saving YAML config for all controller and enforcer pods.."
+kubectl get pods -n neuvector | grep controller | awk {'print $1'} | xargs kubectl get pod -n neuvector -o yaml > logs/$_DATE_/ctr/controller_pod_yaml_backup.log
+kubectl get pods -n neuvector | grep enforcer | awk {'print $1'} | xargs kubectl get pod -n neuvector -o yaml > logs/$_DATE_/enf/enforcer_pod_yaml_backup.log
